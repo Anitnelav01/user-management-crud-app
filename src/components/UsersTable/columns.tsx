@@ -4,13 +4,11 @@ import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { User, Role, ROLE_COLORS } from "@/types/user";
 
 interface ColumnsProps {
-  getManagerName: (managerId: string | null) => string;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
 }
 
 export const getColumns = ({
-  getManagerName,
   onEdit,
   onDelete,
 }: ColumnsProps): ColumnsType<User> => [
@@ -57,12 +55,6 @@ export const getColumns = ({
     ],
     onFilter: (value, record) => record.role === value,
     sorter: (a, b) => a.role.localeCompare(b.role),
-  },
-  {
-    title: "Менеджер",
-    dataIndex: "managerId",
-    key: "managerId",
-    render: (managerId: string | null) => getManagerName(managerId),
   },
   {
     title: "Действия",

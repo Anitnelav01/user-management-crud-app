@@ -2,17 +2,16 @@
 
 import { Typography, Button, Space, Card } from "antd";
 import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
+import { useState } from "react";
 import { UsersTable } from "@/components/UsersTable";
+import { UserModal } from "@/components/UserModal";
 import { userStore } from "@/store/useUsersStore";
 
 const { Title } = Typography;
 
 export default function Home() {
-  const { resetToInitial } = userStore();
-
-  const handleCreate = () => {
-    console.log(" Создать пользователя");
-  };
+  const { resetToInitial, users } = userStore();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   return (
     <div style={{ padding: 24 }}>
@@ -26,23 +25,39 @@ export default function Home() {
           }}
         >
           <Title level={2} style={{ margin: 0 }}>
-            Пользователи
+            Управление пользователями
+            <Typography.Text
+              type="secondary"
+              style={{ fontSize: 16, fontWeight: "normal", marginLeft: 12 }}
+            >
+              ({users.length} записей)
+            </Typography.Text>
           </Title>
           <Space>
             <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                resetToInitial();
+              }}
+            >
+              Сбросить данные
+            </Button>
+            <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={handleCreate}
+              onClick={() => setCreateModalOpen(true)}
             >
-              Создать пользователя
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={resetToInitial}>
-              Сбросить данные
+              Добавить пользователя
             </Button>
           </Space>
         </div>
         <UsersTable />
       </Card>
+      <UserModal
+        open={createModalOpen}
+        user={null}
+        onClose={() => setCreateModalOpen(false)}
+      />
     </div>
   );
 }
