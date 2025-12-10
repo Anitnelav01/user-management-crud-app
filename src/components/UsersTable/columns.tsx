@@ -37,6 +37,13 @@ export const getColumns = ({
     title: "Телефон",
     dataIndex: "phone",
     key: "phone",
+    render: (phone: string) => {
+      if (!phone || phone.length !== 10) return phone;
+      return `+7 (${phone.slice(0, 3)}) ${phone.slice(3, 6)}-${phone.slice(
+        6,
+        8
+      )}-${phone.slice(8, 10)}`;
+    },
   },
   {
     title: "Роль",

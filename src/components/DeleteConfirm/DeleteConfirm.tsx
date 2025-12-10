@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Modal, Select, Typography, Alert, message } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
-import { User, ROLE_LABELS } from "@/types/user";
+import { User, ROLE_LABELS, ROLE_HIERARCHY } from "@/types/user";
 import { userStore } from "@/store/useUsersStore";
 
 const { Text } = Typography;
@@ -36,25 +36,19 @@ export function DeleteConfirm({
     return users.filter((u) => {
       if (u.id === user.id) return false;
       if (subordinates.some((sub) => sub.id === u.id)) return false;
-      const roleHierarchy = {
-        admin: 3,
-        manager: 2,
-        user: 1,
-      };
+
       return subordinates.every(
-        (sub) => roleHierarchy[u.role] > roleHierarchy[sub.role]
+        (sub) => ROLE_HIERARCHY[u.role] > ROLE_HIERARCHY[sub.role]
       );
     });
   }, [user, users, subordinates, hasSubordinates]);
 
-  const managerOptions = [
-    { value: "__none__", label: "Оставить без начальника" },
-    ,
-    ...possibleNewManagers.map((manager) => ({
-      value: manager.id,
-      label: `${manager.name} (${ROLE_LABELS[manager.role]})`,
-    })),
-  ];
+  const managerOptions = possibleNewManagers.map((manager) => ({
+    value: manager.id,
+    label: `${manager.name} (${ROLE_LABELS[manager.role]})`,
+  }));
+
+  const canDelete = !hasSubordinates || possibleNewManagers.length > 0;
 
   const handleDelete = async () => {
     if (!user) return;
@@ -64,9 +58,8 @@ export function DeleteConfirm({
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     try {
-      if (hasSubordinates) {
-        const managerId = newManagerId === " __nane__" ? null : newManagerId;
-        reassignSubordinates(user.id, managerId);
+      if (hasSubordinates && newManagerId) {
+        reassignSubordinates(user.id, newManagerId);
       }
 
       deleteUser(user.id);
@@ -78,82 +71,107 @@ export function DeleteConfirm({
       setLoading(false);
       setNewManagerId(null);
     }
+  };
 
-    const handleCancel = () => {
-      setNewManagerId(null);
-      onClose();
-    };
+  const handleCancel = () => {
+    setNewManagerId(null);
+    onClose();
+  };
 
-    if (!user) return null;
+  if (!user) return null;
 
-    return (
-      <Modal
-        title={
-          <span>
-            <ExclamationCircleOutlined
-              style={{ color: "red", marginRight: 8 }}
-            />
-            Удаление пользователя
-          </span>
-        }
-        open={open}
-        onOk={handleDelete}
-        onCancel={handleCancel}
-        okText="Удалить"
-        cancelText="Отмена"
-        okButtonProps={{ danger: true, loading }}
-        width={500}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <Text>
-            Вы уверены, что хотите удалить пользователя
-            {user.name}
-          </Text>
-        </div>
+  return (
+    <Modal
+      title={
+        <span>
+          <ExclamationCircleOutlined style={{ color: "red", marginRight: 8 }} />
+          Удаление пользователя
+        </span>
+      }
+      open={open}
+      onOk={handleDelete}
+      onCancel={handleCancel}
+      okText="Удалить"
+      cancelText="Отмена"
+      okButtonProps={{
+        danger: true,
+        loading,
+        disabled: !canDelete || (hasSubordinates && !newManagerId),
+      }}
+      width={500}
+    >
+      {!canDelete && (
+        <Alert
+          type="error"
+          showIcon
+          message="Невозможно удалить пользователя"
+          description="У пользователя есть подчинённые, но нет доступных начальников для их переназначения. Сначала удалите или переназначьте подчинённых."
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
-        {user.managerId && (
-          <Alert
-            type="info"
-            showIcon
-            message="У пользователя есть начальник"
-            description="Связь с начальником будет удалена автоматически."
-            style={{ marginBottom: 16 }}
-          />
-        )}
-        {hasSubordinates && (
-          <>
+      {canDelete && (
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <Text>
+              Вы уверены, что хотите удалить пользователя{" "}
+              <Text strong>&quot;{user.name}&quot;</Text>?
+            </Text>
+          </div>
+
+          {user.managerId && (
             <Alert
-              type="warning"
+              type="info"
               showIcon
-              message={`У пользователя ${subordinates.length} подчинённых`}
-              description="Выберите нового начальника для подчинённых или оставьте их без начальника."
+              message="У пользователя есть начальник"
+              description="Связь с начальником будет удалена автоматически."
               style={{ marginBottom: 16 }}
             />
+          )}
 
-            <div style={{ marginBottom: 8 }}>
-              <Text strong>Подчинённые:</Text>
-              <ul style={{ margin: "8px 0", paddingLeft: 20 }}>
-                {subordinates.map((sub) => (
-                  <li key={sub.id}>
-                    {sub.name} ({ROLE_LABELS[sub.role]})
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <Text strong>Новый начальник:</Text>
-              <Select
-                style={{ width: "100%", marginTop: 8 }}
-                placeholder="Выберите нового начальника"
-                options={managerOptions}
-                value={newManagerId}
-                onChange={setNewManagerId}
+          {hasSubordinates && (
+            <>
+              <Alert
+                type="warning"
+                showIcon
+                message={`У пользователя ${subordinates.length} подчинённых`}
+                description="Подчинённые не могут остаться без начальника. Выберите нового начальника для них."
+                style={{ marginBottom: 16 }}
               />
-            </div>
-          </>
-        )}
-      </Modal>
-    );
-  };
+
+              <div style={{ marginBottom: 8 }}>
+                <Text strong>Подчинённые:</Text>
+                <ul style={{ margin: "8px 0", paddingLeft: 20 }}>
+                  {subordinates.map((sub) => (
+                    <li key={sub.id}>
+                      {sub.name} ({ROLE_LABELS[sub.role]})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <Text strong>
+                  Новый начальник: <Text type="danger">*</Text>
+                </Text>
+                <Select
+                  style={{ width: "100%", marginTop: 8 }}
+                  placeholder="Обязательно выберите нового начальника"
+                  options={managerOptions}
+                  value={newManagerId}
+                  onChange={setNewManagerId}
+                  status={!newManagerId ? "error" : undefined}
+                />
+                {!newManagerId && (
+                  <Text type="danger" style={{ fontSize: 12 }}>
+                    Необходимо выбрать нового начальника
+                  </Text>
+                )}
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </Modal>
+  );
 }

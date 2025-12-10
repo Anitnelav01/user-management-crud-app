@@ -24,10 +24,16 @@ interface UserState {
   ) => void;
 
   resetToInitial: () => void;
+  canChangeRole: (
+    userId: string,
+    newRole: Role
+  ) => { valid: boolean; error?: string };
 }
 
-const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+const generateId = (length: number = 6): string => {
+  const min = Math.pow(10, length - 1);
+  const max = Math.pow(10, length) - 1;
+  return Math.floor(min + Math.random() * (max - min + 1)).toString();
 };
 
 export const userStore = create<UserState>()(
@@ -96,6 +102,32 @@ export const userStore = create<UserState>()(
 
       resetToInitial: () => {
         set({ users: initialUsers });
+      },
+
+      canChangeRole: (userId: string, newRole: Role) => {
+        const user = get().getUserById(userId);
+
+        if (!user) return { valid: false, error: "Пользователь не найден" };
+
+        const subordinates = get().getSubordinates(userId);
+
+        if (subordinates.length === 0) {
+          return { valid: true };
+        }
+
+        const canStrillManage = subordinates.every(
+          (sub) => ROLE_HIERARCHY[newRole] > ROLE_HIERARCHY[sub.role]
+        );
+
+        if (!canStrillManage) {
+          const subNames = subordinates.map((sub) => sub.name).join(", ");
+          return {
+            valid: false,
+            error: `Невозможно изменить роль. У пользователя есть подчиненные: ${subNames}. Сначала переназначтье их другому начальнику`,
+          };
+        }
+
+        return { valid: true };
       },
     }),
     {

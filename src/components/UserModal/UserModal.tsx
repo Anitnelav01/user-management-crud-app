@@ -6,7 +6,6 @@ import { UserForm } from "@/components/UserForm";
 import { User } from "@/types/user";
 import { UserFormData } from "@/schemas/userSchema";
 import { userStore } from "@/store/useUsersStore";
-import { is } from "zod/locales";
 
 interface UserModalProps {
   open: boolean;
@@ -15,7 +14,7 @@ interface UserModalProps {
 }
 
 export function UserModal({ open, user, onClose }: UserModalProps) {
-  const { addUser, updateUser } = userStore();
+  const { addUser, updateUser, canChangeRole } = userStore();
   const [loading, setLoading] = useState(false);
 
   const title = !!user ? "Редактировать пользователя" : "Добавить пользователя";
@@ -27,6 +26,14 @@ export function UserModal({ open, user, onClose }: UserModalProps) {
 
     try {
       if (!!user) {
+        if (data.role !== user.role) {
+          const { valid, error } = canChangeRole(user.id, data.role);
+          if (!valid) {
+            message.error(error);
+            setLoading(false);
+            return;
+          }
+        }
         updateUser(user.id, data);
         message.success(`Пользователь ${data.name} обновлен`);
       } else {
@@ -46,7 +53,7 @@ export function UserModal({ open, user, onClose }: UserModalProps) {
       open={open}
       onCancel={onClose}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
       width={500}
     >
       <UserForm

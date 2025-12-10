@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-const phoneRegex =
-  /^(\+7|8)[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/;
+const phoneRegex = /^\d{10}$/;
 
 export const userSchema = z.object({
   name: z
@@ -14,7 +13,7 @@ export const userSchema = z.object({
     .email({ message: "Введите корректный email" }),
   phone: z
     .string()
-    .min(1)
+    .length(10, "Телефон должен содержать 10 цифр")
     .regex(phoneRegex, "Введите корректный номер телефона"),
   role: z.enum(["admin", "manager", "user"], {
     message: "Роль должна быть выбрана",

@@ -42,10 +42,11 @@ export function UsersTable() {
     setEditModalOpen(true);
   };
 
-const handleDelete = (user: User): void => {
-  setDeletingUser(user);
-  setDeleteModalOpen(true);
-};
+  const handleDelete = (user: User): void => {
+    console.log("clicl");
+    setDeletingUser(user);
+    setDeleteModalOpen(true);
+  };
 
   const handleEditClose = () => {
     setEditModalOpen(false);
