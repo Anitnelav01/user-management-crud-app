@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, JSX } from "react";
 import { Modal, Select, Typography, Alert, message } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { User, ROLE_LABELS, ROLE_HIERARCHY } from "@/types/user";
