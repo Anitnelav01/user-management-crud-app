@@ -89,7 +89,7 @@ export function UsersTable() {
           showTotal: (total, range) =>
             `${range[0]}-${range[1]} из ${total} записей`,
           onChange: (page, pageSize) => {
-            setPagination({ current: page, pageSize });
+            setPagination({ curent: page, pageSixe: pageSize });
           },
         }}
         bordered

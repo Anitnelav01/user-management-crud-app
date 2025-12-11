@@ -6,6 +6,7 @@ import { User, Role, ROLE_COLORS } from "@/types/user";
 interface ColumnsProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  getManagerName: (managerId: string) => string;
 }
 
 export const getColumns = ({
