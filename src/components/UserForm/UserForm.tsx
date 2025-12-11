@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { Form, Input, Select, Button, Space } from "antd";
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { useForm, Controller, useWatch, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema, UserFormData } from "@/schemas/userSchema";
 import { User, ROLE_LABELS } from "@/types/user";
@@ -15,6 +15,14 @@ interface UserFormProps {
   loading?: boolean;
 }
 
+interface PhoneInputProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  onBlur?: () => void;
+}
+
+const resolver = zodResolver(userSchema) as Resolver<UserFormData>;
+
 export function UserForm({ user, onSubmit, onCancel, loading }: UserFormProps) {
   const { getPossibleManagers, getSubordinates } = userStore();
 
@@ -24,7 +32,7 @@ export function UserForm({ user, onSubmit, onCancel, loading }: UserFormProps) {
     reset,
     formState: { errors },
   } = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
+    resolver,
     defaultValues: {
       name: "",
       email: "",
@@ -43,10 +51,15 @@ export function UserForm({ user, onSubmit, onCancel, loading }: UserFormProps) {
   const possibleManagers = getPossibleManagers(selectedRole, user?.id);
   const subordinates = user ? getSubordinates(user.id) : [];
 
-  const PhoneInput = ({ value, onChange, onBlur, ...props }: any) => {
-    const inputRef = React.useRef<any>(null);
+  const PhoneInput: React.FC<PhoneInputProps> = ({
+    value,
+    onChange,
+    onBlur,
+    ...props
+  }) => {
+    const inputRef = React.useRef(null);
 
-    const formatDisplay = (digits: string) => {
+    const formatDisplay = (digits: string | undefined): string => {
       if (!digits) return "";
 
       const d = digits.slice(0, 10);
@@ -69,7 +82,10 @@ export function UserForm({ user, onSubmit, onCancel, loading }: UserFormProps) {
       }
 
       const digits = phoneDigits.slice(0, 10);
-      onChange(digits);
+
+      if (onChange) {
+        onChange(digits);
+      }
     };
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {

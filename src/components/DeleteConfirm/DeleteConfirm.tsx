@@ -65,7 +65,7 @@ export function DeleteConfirm({
       deleteUser(user.id);
       message.success(`Пользователь "${user.name}" удален`);
       onClose();
-    } catch (error) {
+    } catch {
       message.error("Ошибка при удалении пользователя");
     } finally {
       setLoading(false);
